@@ -21,27 +21,21 @@ export default function Login() {
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: "60px auto", fontFamily: "Arial" }}>
-      <h2>Log in</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ display: "block", width: "100%", padding: 8, marginBottom: 10 }}
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ display: "block", width: "100%", padding: 8, marginBottom: 10 }}
-        />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" style={{ padding: "8px 16px" }}>Login</button>
-      </form>
-      <p>No account? <Link to="/register">Register</Link></p>
+    <div className="auth-wrap">
+      <div className="card auth-card">
+        <div className="logo"><span className="logo-mark">T</span>TestFlow</div>
+        <h2>Log in</h2>
+        <p className="sub">Build and run browser tests without writing code.</p>
+        <form onSubmit={handleSubmit}>
+          <label className="field-label">Email</label>
+          <input className="input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label className="field-label">Password</label>
+          <input className="input" type="password" placeholder="Your password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {error && <p className="error-text">{error}</p>}
+          <button className="btn btn-primary" type="submit" style={{ width: "100%", marginTop: 20, padding: 12 }}>Log in</button>
+        </form>
+        <p className="auth-foot">No account? <Link to="/register">Register</Link></p>
+      </div>
     </div>
   );
 }

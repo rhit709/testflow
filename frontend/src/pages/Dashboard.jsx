@@ -19,28 +19,40 @@ export default function Dashboard() {
     navigate("/login");
   }
 
+  async function deleteTest(id) {
+    if (!window.confirm("Delete this test and its run history?")) return;
+    try {
+      await api.delete(`/tests/${id}`);
+      setTests(tests.filter((t) => t._id !== id));
+    } catch (err) {
+      alert("Delete failed: " + (err.response?.data?.error || err.message));
+    }
+  }
+
   return (
-    <div style={{ maxWidth: 700, margin: "40px auto", fontFamily: "Arial" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>My Tests</h2>
-        <div>
-          <Link to="/builder"><button style={{ marginRight: 10, padding: "8px 14px" }}>+ New Test</button></Link>
-          <button onClick={logout} style={{ padding: "8px 14px" }}>Logout</button>
-        </div>
+    <div className="page">
+      <div className="topbar">
+        <div className="logo"><span className="logo-mark">T</span>TestFlow</div>
+        <div className="spacer" />
+        <Link to="/builder" className="btn btn-primary">+ New test</Link>
+        <button className="btn" onClick={logout}>Log out</button>
       </div>
 
-      {loading && <p>Loading...</p>}
-      {!loading && tests.length === 0 && <p>No tests yet — create your first one.</p>}
+      <h2 className="page-title">My tests</h2>
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      {loading && <p className="muted">Loading...</p>}
+      {!loading && tests.length === 0 && <div className="empty">No tests yet. Create your first one.</div>}
+
+      <ul className="test-list">
         {tests.map((t) => (
-          <li key={t._id} style={{ background: "#f6fafc", border: "1px solid #d8e3ea", borderRadius: 6, padding: 12, marginBottom: 8 }}>
-            <Link to="/builder" state={{ test: t }} style={{ textDecoration: "none", color: "#0b3d5c", fontWeight: "bold" }}>
-              {t.name}
-            </Link>
-            <span style={{ color: "#888", marginLeft: 10, fontSize: 13 }}>
-              {t.blocks.length} steps · created {new Date(t.createdAt).toLocaleDateString()}
-            </span>
+          <li key={t._id} className="test-item">
+            <div>
+              <Link to="/builder" state={{ test: t }} className="test-link">{t.name}</Link>
+              <div className="test-meta">
+                {t.blocks.length} steps · created {new Date(t.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            <button className="btn btn-danger" onClick={() => deleteTest(t._id)}>Delete</button>
           </li>
         ))}
       </ul>

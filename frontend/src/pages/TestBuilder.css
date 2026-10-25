@@ -1,0 +1,134 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+.tb {
+  --bg: #0f1218;
+  --panel: #171b23;
+  --panel-2: #1d222c;
+  --line: #2a303c;
+  --text: #e6e9ef;
+  --muted: #8b94a5;
+  --accent: #ff7a45;
+  --pass: #3ecf8e;
+  --fail: #f0616d;
+  --heal: #f5b942;
+
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px 20px 60px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, "Segoe UI", Arial, sans-serif;
+  text-align: left;
+}
+.tb *, .tb *::before, .tb *::after { box-sizing: border-box; }
+
+.tb-wrap { max-width: 1100px; margin: 0 auto; }
+
+.tb-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.tb-head h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+.tb button { font-family: inherit; font-size: 14px; cursor: pointer; border-radius: 8px; }
+.tb button:focus-visible, .tb input:focus-visible, .tb select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+.tb-ghost {
+  background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 7px 12px;
+}
+.tb-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+.tb-name {
+  width: 100%; padding: 12px 14px; margin-bottom: 20px;
+  font: inherit; font-size: 16px; font-weight: 500;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--line); border-radius: 10px;
+}
+.tb-name::placeholder, .tb-field::placeholder { color: #5d6677; }
+
+.tb-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .tb-grid { grid-template-columns: 1fr; } }
+
+.tb-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.tb-panel + .tb-panel { margin-top: 20px; }
+.tb-panel h2 { margin: 0 0 14px; font-size: 15px; font-weight: 600; }
+
+/* add-step form */
+.tb-add { display: grid; grid-template-columns: 120px 1fr 1fr auto; gap: 8px; margin-bottom: 18px; }
+@media (max-width: 620px) { .tb-add { grid-template-columns: 1fr 1fr; } }
+.tb-field {
+  min-width: 0; padding: 9px 11px; font: inherit; font-size: 14px;
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px;
+}
+.tb-add-btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 9px 14px; font-weight: 500; }
+.tb-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* steps */
+.tb-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tb-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; background: var(--panel-2);
+  border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px;
+}
+.tb-step.passed { border-left-color: var(--pass); }
+.tb-step.failed { border-left-color: var(--fail); background: rgba(240, 97, 109, 0.07); }
+.tb-step.pending { border-left-color: #3b4252; }
+.tb-step.running { border-left-color: var(--accent); }
+
+.tb-num {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600; color: var(--muted); background: var(--bg);
+}
+.tb-body { flex: 1; min-width: 0; }
+.tb-action { font-weight: 600; font-size: 14px; }
+.tb-detail { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--muted); margin-top: 3px; overflow-wrap: anywhere; }
+.tb-heal {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 6px;
+  font-size: 12px; color: var(--heal); background: rgba(245, 185, 66, 0.12);
+}
+.tb-state { flex: none; font-size: 12px; font-weight: 600; }
+.tb-state.passed { color: var(--pass); }
+.tb-state.failed { color: var(--fail); }
+.tb-state.pending { color: var(--muted); font-weight: 500; }
+.tb-state.running { color: var(--accent); }
+
+.tb-del { background: transparent; color: var(--muted); border: none; padding: 4px 8px; font-size: 13px; }
+.tb-del:hover { color: var(--fail); }
+
+.tb-empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+/* actions */
+.tb-actions { display: flex; gap: 10px; margin-top: 18px; }
+.tb-save { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); padding: 10px 18px; font-weight: 500; }
+.tb-save:hover { border-color: var(--muted); }
+.tb-run { background: var(--accent); color: #1a0d05; border: none; padding: 10px 22px; font-weight: 600; }
+.tb-run:hover:not(:disabled) { filter: brightness(1.08); }
+.tb-run:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* result */
+.tb-result { border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid; }
+.tb-result.passed { background: rgba(62, 207, 142, 0.1); border-color: rgba(62, 207, 142, 0.4); }
+.tb-result.failed { background: rgba(240, 97, 109, 0.1); border-color: rgba(240, 97, 109, 0.4); }
+.tb-result strong { display: block; font-size: 18px; }
+.tb-result.passed strong { color: var(--pass); }
+.tb-result.failed strong { color: var(--fail); }
+.tb-result span { font-size: 13px; color: var(--muted); }
+
+.tb-sub { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.tb-code {
+  margin: 0 0 6px; padding: 12px; border-radius: 8px; overflow-x: auto;
+  background: #0a0d12; color: #d7dee9; border: 1px solid var(--line);
+  font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 12.5px; line-height: 1.6;
+  white-space: pre-wrap; text-align: left;
+}
+
+/* history */
+.tb-hist { list-style: none; margin: 0; padding: 0; }
+.tb-hist li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.tb-hist li:last-child { border-bottom: none; }
+.tb-pill { padding: 2px 9px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+.tb-pill.passed { color: var(--pass); background: rgba(62, 207, 142, 0.12); }
+.tb-pill.failed { color: var(--fail); background: rgba(240, 97, 109, 0.12); }
+.tb-time { color: var(--muted); }

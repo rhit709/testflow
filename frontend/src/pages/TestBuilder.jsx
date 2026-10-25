@@ -1,13 +1,21 @@
 import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { io } from "socket.io-client";
 import api from "../api";
 
 const ACTIONS = ["navigate", "click", "type", "wait", "assert", "screenshot"];
 
+const HINTS = {
+  navigate: { target: "target (not needed)", value: "URL, e.g. https://example.com" },
+  click: { target: "CSS selector, e.g. #loginBtn", value: "value (not needed)" },
+  type: { target: "CSS selector, e.g. #email", value: "text to type" },
+  wait: { target: "CSS selector to wait for", value: "value (not needed)" },
+  assert: { target: "target (not needed)", value: "text that should appear" },
+  screenshot: { target: "target (not needed)", value: "value (not needed)" },
+};
+
 export default function TestBuilder() {
   const location = useLocation();
-  const navigate = useNavigate();
   const existingTest = location.state?.test;
 
   const [testId, setTestId] = useState(existingTest?._id || null);
@@ -17,16 +25,18 @@ export default function TestBuilder() {
   const [target, setTarget] = useState("");
   const [value, setValue] = useState("");
 
-  const [stepStatuses, setStepStatuses] = useState([]); // live pass/fail per block index
+  const [stepStatuses, setStepStatuses] = useState([]);
   const [running, setRunning] = useState(false);
   const [overallPass, setOverallPass] = useState(null);
   const [generatedCode, setGeneratedCode] = useState("");
+  const [explanation, setExplanation] = useState(null);
+  const [explanationSource, setExplanationSource] = useState("");
   const [runs, setRuns] = useState([]);
 
   const socketRef = useRef(null);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:5000");
+    socketRef.current = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
     return () => socketRef.current.disconnect();
   }, []);
 
@@ -41,15 +51,22 @@ export default function TestBuilder() {
     api.get(`/tests/${id}/runs`).then((res) => setRuns(res.data)).catch(() => {});
   }
 
+  function resetResults() {
+    setStepStatuses([]);
+    setOverallPass(null);
+    setExplanation(null);
+  }
+
   function addStep() {
-    if (!action) return;
     setBlocks([...blocks, { action, target, value }]);
+    resetResults();
     setTarget("");
     setValue("");
   }
 
   function deleteStep(i) {
     setBlocks(blocks.filter((_, idx) => idx !== i));
+    resetResults();
   }
 
   async function saveTest() {
@@ -57,9 +74,18 @@ export default function TestBuilder() {
       alert("Give the test a name and at least one step first.");
       return;
     }
-    const res = await api.post("/tests", { name: testName, blocks });
-    setTestId(res.data._id);
-    alert("Test saved!");
+    try {
+      if (testId) {
+        await api.put(`/tests/${testId}`, { name: testName, blocks });
+        alert("Test updated!");
+      } else {
+        const res = await api.post("/tests", { name: testName, blocks });
+        setTestId(res.data._id);
+        alert("Test saved!");
+      }
+    } catch (err) {
+      alert("Save failed: " + (err.response?.data?.error || err.message));
+    }
   }
 
   async function runTest() {
@@ -69,6 +95,7 @@ export default function TestBuilder() {
     }
     setRunning(true);
     setOverallPass(null);
+    setExplanation(null);
     setStepStatuses(blocks.map(() => "pending"));
 
     socketRef.current.off("step-result");
@@ -77,7 +104,7 @@ export default function TestBuilder() {
     socketRef.current.on("step-result", (data) => {
       setStepStatuses((prev) => {
         const next = [...prev];
-        next[data.index] = data.status;
+        next[data.index] = data;
         return next;
       });
     });
@@ -90,6 +117,8 @@ export default function TestBuilder() {
       const res = await api.post(`/tests/${testId}/run`);
       setGeneratedCode(res.data.generatedCode);
       setOverallPass(res.data.overallPass);
+      setExplanation(res.data.explanation || null);
+      setExplanationSource(res.data.explanationSource || "");
       loadRuns(testId);
     } catch (err) {
       alert("Run failed: " + (err.response?.data?.error || err.message));
@@ -98,71 +127,132 @@ export default function TestBuilder() {
     }
   }
 
+  const firstPending = running ? stepStatuses.findIndex((s) => s === "pending") : -1;
+  const passedCount = stepStatuses.filter((s) => typeof s === "object" && s.status === "passed").length;
+
+  function stepView(i) {
+    const d = stepStatuses[i];
+    if (!d) return { cls: "", label: "" };
+    if (typeof d === "object") {
+      return d.status === "passed" ? { cls: "passed", label: "Passed" } : { cls: "failed", label: "Failed" };
+    }
+    if (!running) return { cls: "", label: "Skipped" };
+    return i === firstPending ? { cls: "running", label: "Running..." } : { cls: "", label: "Waiting" };
+  }
+
+  const hint = HINTS[action];
+
   return (
-    <div style={{ maxWidth: 800, margin: "30px auto", fontFamily: "Arial" }}>
-      <button onClick={() => navigate("/dashboard")} style={{ marginBottom: 10 }}>← Back to Dashboard</button>
-      <h2>Test Builder</h2>
+    <div className="page">
+      <div className="topbar">
+        <Link to="/dashboard" className="btn btn-ghost">← Dashboard</Link>
+        <h1 className="page-title">Test Builder</h1>
+      </div>
 
       <input
+        className="input"
         placeholder="Test name"
         value={testName}
         onChange={(e) => setTestName(e.target.value)}
-        style={{ display: "block", width: "100%", padding: 8, marginBottom: 14, fontSize: 15 }}
+        style={{ marginBottom: 20, padding: "14px 16px", fontSize: 16 }}
       />
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-        <select value={action} onChange={(e) => setAction(e.target.value)} style={{ padding: 8 }}>
-          {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <input placeholder="target (CSS selector)" value={target} onChange={(e) => setTarget(e.target.value)} style={{ flex: 1, padding: 8 }} />
-        <input placeholder="value (URL / text)" value={value} onChange={(e) => setValue(e.target.value)} style={{ flex: 1, padding: 8 }} />
-        <button onClick={addStep} style={{ padding: "8px 14px" }}>Add Step</button>
-      </div>
+      <div className="grid-2">
+        <div className="card">
+          <h3 className="card-title">Steps</h3>
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {blocks.map((b, i) => {
-          const status = stepStatuses[i];
-          const bg = status === "passed" ? "#e6f7ee" : status === "failed" ? "#fdecea" : status === "pending" ? "#fff8e1" : "#f6fafc";
-          const icon = status === "passed" ? "✅" : status === "failed" ? "❌" : status === "pending" ? "⏳" : "";
-          return (
-            <li key={i} style={{ background: bg, border: "1px solid #d8e3ea", borderRadius: 6, padding: 10, marginBottom: 6, display: "flex", justifyContent: "space-between" }}>
-              <span>{icon} <b>{b.action}</b> {b.target && `→ ${b.target}`} {b.value && `= ${b.value}`}</span>
-              <button onClick={() => deleteStep(i)}>Delete</button>
-            </li>
-          );
-        })}
-      </ul>
+          <div className="add-row">
+            <select className="input select" value={action} onChange={(e) => setAction(e.target.value)}>
+              {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <input className="input" placeholder={hint.target} value={target} onChange={(e) => setTarget(e.target.value)} />
+            <input className="input" placeholder={hint.value} value={value} onChange={(e) => setValue(e.target.value)} />
+            <button className="btn" onClick={addStep}>Add step</button>
+          </div>
 
-      <div style={{ marginTop: 16 }}>
-        <button onClick={saveTest} style={{ padding: "10px 18px", marginRight: 10 }}>Save Test</button>
-        <button onClick={runTest} disabled={running || !testId} style={{ padding: "10px 18px", background: "#ff7a45", color: "white", border: "none" }}>
-          {running ? "Running..." : "Run Test"}
-        </button>
-      </div>
-
-      {overallPass !== null && (
-        <div style={{ marginTop: 16, padding: 12, borderRadius: 6, background: overallPass ? "#e6f7ee" : "#fdecea" }}>
-          <b>Result: {overallPass ? "PASSED ✅" : "FAILED ❌"}</b>
-          {generatedCode && (
-            <pre style={{ background: "#1b2530", color: "#e8f0f5", padding: 12, borderRadius: 6, marginTop: 10, whiteSpace: "pre-wrap" }}>
-              {generatedCode}
-            </pre>
-          )}
-        </div>
-      )}
-
-      {runs.length > 0 && (
-        <div style={{ marginTop: 24 }}>
-          <h3>Run History</h3>
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {runs.map((r) => (
-              <li key={r._id} style={{ padding: 8, borderBottom: "1px solid #eee" }}>
-                {r.overallPass ? "✅ Passed" : "❌ Failed"} — {new Date(r.createdAt).toLocaleString()}
-              </li>
-            ))}
+          <ul className="steps">
+            {blocks.map((b, i) => {
+              const v = stepView(i);
+              const d = stepStatuses[i];
+              const healed = typeof d === "object" && d?.healed;
+              const failedMsg = typeof d === "object" && d?.status === "failed" ? d.errorMessage?.split("\n")[0] : null;
+              return (
+                <li key={i} className={`step ${v.cls}`}>
+                  <span className="step-num">{i + 1}</span>
+                  <div className="step-main">
+                    <div className="step-action">{b.action}</div>
+                    <div className="step-detail">
+                      {b.target ? `→ ${b.target}` : ""}{b.target && b.value ? " " : ""}{b.value ? `= ${b.value}` : ""}
+                    </div>
+                    {healed && <span className="heal-badge">Self-healed → {d.healedSelector}</span>}
+                    {failedMsg && <div className="step-error">{failedMsg}</div>}
+                  </div>
+                  {v.label && <span className={`status ${v.cls}`}>{v.label}</span>}
+                  <button className="step-del" onClick={() => deleteStep(i)}>Delete</button>
+                </li>
+              );
+            })}
           </ul>
+
+          <div className="actions">
+            <button className="btn" onClick={saveTest}>Save test</button>
+            <button className="btn btn-primary" onClick={runTest} disabled={running || !testId}>
+              {running ? "Running..." : "Run test"}
+            </button>
+          </div>
         </div>
-      )}
+
+        <div>
+          <div className="card">
+            <h3 className="card-title">Result</h3>
+
+            {running && <p className="muted">Running. Each step reports back on the left as it finishes.</p>}
+            {!running && overallPass === null && <p className="muted">Select "Run test" to see the result here.</p>}
+
+            {!running && overallPass !== null && (
+              <>
+                <div className={`result-box ${overallPass ? "pass" : "fail"}`}>
+                  <div className={`result-head ${overallPass ? "pass" : "fail"}`}>{overallPass ? "Passed" : "Failed"}</div>
+                  <div className="result-sub">{passedCount} of {blocks.length} steps passed</div>
+                </div>
+
+                {explanation && (
+                  <div className="explain">
+                    <div className="explain-title">
+                      Why did it fail?
+                      <span className="tag">{explanationSource === "ai" ? "AI" : "Rule-based"}</span>
+                    </div>
+                    <p>{explanation}</p>
+                  </div>
+                )}
+
+                {generatedCode && (
+                  <>
+                    <div className="code-label">Generated Playwright code</div>
+                    <pre className="code">{generatedCode}</pre>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="card" style={{ marginTop: 20 }}>
+            <h3 className="card-title">Run history</h3>
+            {runs.length === 0 ? (
+              <p className="muted">No runs yet.</p>
+            ) : (
+              <ul className="history">
+                {runs.map((r) => (
+                  <li key={r._id}>
+                    <span className={`pill ${r.overallPass ? "pass" : "fail"}`}>{r.overallPass ? "Passed" : "Failed"}</span>
+                    {new Date(r.createdAt).toLocaleString()}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

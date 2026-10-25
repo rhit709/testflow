@@ -22,33 +22,23 @@ export default function Register() {
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: "60px auto", fontFamily: "Arial" }}>
-      <h2>Create an account</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          style={{ display: "block", width: "100%", padding: 8, marginBottom: 10 }}
-        />
-        <input
-          placeholder="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ display: "block", width: "100%", padding: 8, marginBottom: 10 }}
-        />
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ display: "block", width: "100%", padding: 8, marginBottom: 10 }}
-        />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" style={{ padding: "8px 16px" }}>Register</button>
-      </form>
-      <p>Already have an account? <Link to="/login">Login</Link></p>
+    <div className="auth-wrap">
+      <div className="card auth-card">
+        <div className="logo"><span className="logo-mark">T</span>TestFlow</div>
+        <h2>Create account</h2>
+        <p className="sub">Build and run browser tests without writing code.</p>
+        <form onSubmit={handleSubmit}>
+          <label className="field-label">Name</label>
+          <input className="input" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
+          <label className="field-label">Email</label>
+          <input className="input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label className="field-label">Password</label>
+          <input className="input" type="password" placeholder="Choose a password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {error && <p className="error-text">{error}</p>}
+          <button className="btn btn-primary" type="submit" style={{ width: "100%", marginTop: 20, padding: 12 }}>Register</button>
+        </form>
+        <p className="auth-foot">Already have an account? <Link to="/login">Log in</Link></p>
+      </div>
     </div>
   );
 }
