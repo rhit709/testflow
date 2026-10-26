@@ -35,8 +35,8 @@ export default function TestBuilder() {
 
   const socketRef = useRef(null);
 
-  useEffect(() => {
-    socketRef.current = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
+    useEffect(() => {
+    socketRef.current = io(import.meta.env.PROD ? undefined : "http://localhost:5000");
     return () => socketRef.current.disconnect();
   }, []);
 

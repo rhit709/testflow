@@ -2,8 +2,8 @@ const { chromium } = require("playwright");
 const { findElementWithHealing } = require("./selfHealing");
 
 async function runBlocksLive(blocks, onStep) {
-  const browser = await chromium.launch({
-    args: ["--no-sandbox", "--disable-dev-shm-usage"], // required inside containers
+    const browser = await chromium.launch({
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
   });
   const page = await browser.newPage();
   const results = [];
@@ -18,19 +18,19 @@ async function runBlocksLive(blocks, onStep) {
 
       switch (block.action) {
         case "navigate":
-          await page.goto(block.value, { timeout: 15000 });
+          await page.goto(block.value, { timeout: 45000 });
           break;
 
         case "click": {
           const found = await findElementWithHealing(page, block.target);
-          await found.locator.click({ timeout: 15000 });
+          await found.locator.click({ timeout: 45000 });
           if (found.healed) healInfo = found;
           break;
         }
 
         case "type": {
           const found = await findElementWithHealing(page, block.target);
-          await found.locator.fill(block.value, { timeout: 15000 });
+          await found.locator.fill(block.value, { timeout: 45000 });
           if (found.healed) healInfo = found;
           break;
         }
@@ -45,7 +45,7 @@ async function runBlocksLive(blocks, onStep) {
           await page.waitForFunction(
             (text) => document.body.innerText.includes(text),
             block.value,
-            { timeout: 15000 }
+            { timeout: 45000 }
           );
           break;
 

@@ -4,7 +4,7 @@ const { generateScript } = require("../services/generateScript");
 const { runBlocksLive } = require("../services/runner");
 const { explainFailure } = require("../services/aiExplainer");
 let activeRuns = 0;
-const MAX_RUNS = 2;
+const MAX_RUNS = 1;
 async function listTests(req, res) {
   const tests = await Test.find({ userId: req.userId }).sort({ createdAt: -1 });
   res.json(tests);
